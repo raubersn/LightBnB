@@ -1,5 +1,8 @@
---select * from users where name='Rauber';
---$2b$12$SREwn4X1VTbD7R1rCmFyIuIR8zlVwKjce.qOlJ2CYcMd5rMq4RZSS
---$2a$10$FB/BOAVhpuLvpOREQVmvmezD4ED/.JBIDRh70tGevYzYzQgFId2u.
-
-select * from users limit 10;
+SELECT properties.*, start_date, end_date, AVG(rating) AS average_rating
+FROM properties
+JOIN reservations ON properties.id = reservations.property_id
+LEFT JOIN property_reviews ON reservations.id = property_reviews.reservation_id AND reservations.property_id = property_reviews.property_id AND reservations.guest_id = property_reviews.guest_id
+WHERE reservations.guest_id = 2
+GROUP BY reservations.id, properties.id
+ORDER BY start_date
+LIMIT 10;
