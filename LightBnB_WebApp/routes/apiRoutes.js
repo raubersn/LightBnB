@@ -4,8 +4,6 @@ const database = require("../db/database");
 const router = express.Router();
 
 router.get("/properties", (req, res) => {
-  console.log(req.query);
-  
   database  
     .getAllProperties(req.query, 20)
     .then((properties) => res.send({ properties }))
