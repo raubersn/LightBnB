@@ -2,9 +2,9 @@
 /*
 Selects all of the reservations of a particular user
 
-The query presentes changes when compared to the proposed solution:
-1. It's used a LEFT JOIN instead of a INNER JOIN with property_reviews, once the desired result is all of my reservations, despite they have reviews or not
-2. Extra fields where used on the join to assure data itegrity. The foreign keys present on property_reviews are independent thus this step is necessary. 
+The query presents changes when compared to the proposed solution:
+It's used a LEFT JOIN instead of an INNER JOIN with property_reviews, once the desired result is all of my reservations, whether they have reviews or not
+2. Extra fields were used on the join to assure data integrity. The foreign keys present on property_reviews are independent thus this step is necessary. 
 2.1 To prove it, if we run the query below (the proposed solution including the reservation id from both tables) we can confirm they don't match. 
       SELECT reservations.id, property_reviews.reservation_id, property_reviews.guest_id, title, start_date, cost_per_night, rating --AVG(rating) AS average_rating //removed to allow the inclusion of property_reviews.reservation_id on the SELECT clause
       FROM properties
