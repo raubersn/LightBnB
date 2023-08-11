@@ -12,6 +12,7 @@ const pool = new Pool({
  * Query the database.
  * @param {string} text The SQL query to be executed in the database.
  * @param {[]} params An array containing the values to be used as parameter in the SQL query.
+ * @param {callback} callback Attaches a callback for the resoltuion of the Promise.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const query = (text, params, callback) => {

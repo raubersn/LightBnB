@@ -1,4 +1,5 @@
-//importing 
+//Importing the database functions for querying
+//All of the parameters and promisses are incapsulated
 const {query} = require('../db/index');
 
 /// Users
@@ -9,11 +10,12 @@ const {query} = require('../db/index');
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function (email) {
+  //Both of the e-mail values(parameter and database) are converted to lower case for comparison
   return query(`SELECT * 
-      FROM users 
-      WHERE lower(email) = $1`,
+                FROM users 
+                WHERE lower(email) = $1`,
       [email.toLowerCase()],
-      //Needs to be refactor to deal with multiple useres with the same e-mail (benjaminfletcher@outlook.com)
+      //Needs to be refactor to deal with multiple users with the same e-mail (benjaminfletcher@outlook.com)
       //This function will return the first user found, which may be wrong
       (result) => {return result.rows[0] || null;});
 };
@@ -25,8 +27,8 @@ const getUserWithEmail = function (email) {
  */
 const getUserWithId = function (id) {
   return query(`SELECT * 
-      FROM users 
-      WHERE id = $1`,
+                FROM users 
+                WHERE id = $1`,
       [id],
       (result) => {return result.rows[0] || null;});
 };
@@ -38,8 +40,8 @@ const getUserWithId = function (id) {
  */
 const addUser = function (user) {
   return query(`INSERT INTO users (name, email, password)
-      VALUES($1, $2, $3)
-      RETURNING *;`,
+                VALUES ($1, $2, $3)
+                RETURNING *;`,
     [user.name, user.email, user.password],
     (result) => {return result.rows[0];});
 };
@@ -54,13 +56,13 @@ const addUser = function (user) {
  */
 const getAllReservations = function (guest_id, limit = 10) {
   return query(`SELECT properties.*, start_date, end_date, AVG(rating) AS average_rating
-      FROM properties
-      JOIN reservations ON properties.id = reservations.property_id
-      LEFT JOIN property_reviews ON reservations.id = property_reviews.reservation_id AND reservations.property_id = property_reviews.property_id AND reservations.guest_id = property_reviews.guest_id
-      WHERE reservations.guest_id = $1
-      GROUP BY reservations.id, properties.id
-      ORDER BY start_date
-      LIMIT $2;`,
+                FROM properties
+                JOIN reservations ON properties.id = reservations.property_id
+                LEFT JOIN property_reviews ON reservations.id = property_reviews.reservation_id AND reservations.property_id = property_reviews.property_id AND reservations.guest_id = property_reviews.guest_id
+                WHERE reservations.guest_id = $1
+                GROUP BY reservations.id, properties.id
+                ORDER BY start_date
+                LIMIT $2;`,
     [guest_id, limit],
     (result) => {return result.rows;});    
 };
@@ -74,17 +76,26 @@ const getAllReservations = function (guest_id, limit = 10) {
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function (options, limit = 10) {
+  //Array which will hold the necessary values for filtering on the WHERE clause
   const queryParams = [];
+  //String used to create the WHERE clause accordingly to the parameters passed to this function
+  let conditions = '';
+
+  //Initiates the Query by selecting the desired fields and joining the necessary tables
   let queryString = `
     SELECT properties.*, AVG(rating) AS average_rating
     FROM properties 
     LEFT JOIN property_reviews ON properties.id = property_reviews.property_id `;
-  let conditions = '';
 
+  //If the owner ID is passed initiates the WHERE clause construction
+  //The value of the parameter is included in the array.
   if (options.owner_id) {
     queryParams.push(options.owner_id);
     conditions = `WHERE owner_id = $${queryParams.length} `;
   }
+  //From this point and on, all the possibilities of parameters for filtering are checked
+  //The value of the parameter is included in the array.
+  //If the parameter checked is the first one, the string is initiate with WHERE. Otherwise an AND is appended to the existing string
   if (options.city) {
     queryParams.push(`%${options.city.toLowerCase()}%`);
     conditions += `${conditions ? 'AND' : 'WHERE'} lower(city) LIKE $${queryParams.length} `;
@@ -98,17 +109,22 @@ const getAllProperties = function (options, limit = 10) {
     conditions += `${conditions ? 'AND' : 'WHERE'} cost_per_night <= $${queryParams.length} `;
   }
 
+  //Concatenates the inital query to the specified filters (if any) and the GROUP BY clause
   queryString += conditions + `GROUP BY properties.id `;
 
+  //If rating is used as a filter, the condition needs to be included in the HAVING once it is an aggregated value
   if (options.minimum_rating) {
     queryParams.push(Number(options.minimum_rating));
     queryString += `HAVING AVG(rating) >= $${queryParams.length} `;
   }
 
+  //Adds to limit of records to the parameters array and the query string
   queryParams.push(limit);
   queryString += `
     ORDER BY cost_per_night
     LIMIT $${queryParams.length};`;
+
+  //Return the results produced by the dynamic querystring
   return query(queryString, queryParams, (result) => {return result.rows;});
 };
 
